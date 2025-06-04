@@ -14,6 +14,9 @@ steps:
       packageType: sdk
       version: "6.x"
 
+  - script: npm install nan@latest
+    displayName: "Install nan dependency"
+
   - task: Npm@1
     displayName: "Run npm install"
     inputs:
