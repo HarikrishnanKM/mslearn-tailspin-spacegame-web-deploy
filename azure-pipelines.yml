@@ -11,7 +11,6 @@ stages:
         displayName: "Build job"
         pool:
           vmImage: ubuntu-latest
-
         variables:
           wwwrootDir: "Tailspin.SpaceGame.Web/wwwroot"
           dotnetSdkVersion: "8.x"
@@ -21,39 +20,52 @@ stages:
             inputs:
               packageType: sdk
               version: "$(dotnetSdkVersion)"
-
           - script: npm install nan@latest
             displayName: "Install nan dependency"
-
           - task: Npm@1
             displayName: "Run npm install"
             inputs:
               verbose: false
-
           - script: "./node_modules/.bin/node-sass $(wwwrootDir) --output $(wwwrootDir)"
             displayName: "Compile Sass assets"
-
           - task: gulp@1
             displayName: "Run gulp tasks"
-
           - script: 'echo "$(Build.DefinitionName), $(Build.BuildId), $(Build.BuildNumber)" > buildinfo.txt'
             displayName: "Write build info"
             workingDirectory: $(wwwrootDir)
-
           - task: DotNetCoreCLI@2
             displayName: "Restore project dependencies"
             inputs:
               command: "restore"
               projects: "**/*.csproj"
-
           - template: templates/build.yml
             parameters:
               buildConfiguration: "Debug"
-
           - template: templates/build.yml
             parameters:
               buildConfiguration: "Release"
-
           - task: PublishBuildArtifacts@1
             displayName: "Publish Artifact: drop"
             condition: succeeded()
+  - stage: "Deploy"
+    displayName: "Deploy the web application"
+    dependsOn: Build
+    jobs:
+      - deployment: Deploy
+        pool:
+          vmImage: ubuntu-latest
+        environment: dev
+        variables:
+          - group: Release
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - download: current
+                  artifact: drop
+                - task: AzureWebApp@1
+                  displayName: "Azure App Service Deploy: website"
+                  inputs:
+                    azureSubscription: "Resource Manager - Tailspin - Space Game"
+                    appName: "$(WebAppName)"
+                    package: "$(Pipeline.Workspace)/drop/$(buildConfiguration)/*.zip"
