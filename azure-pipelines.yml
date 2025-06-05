@@ -26,7 +26,10 @@ stages:
             inputs:
               version: "$(dotnetSdkVersion)"
 
-          - script: "npm install --force"
+          - script: sudo apt update && sudo apt upgrade -y
+            displayName: "Update package lists"
+
+          - script: npm install nan@latest
             displayName: "Install nan dependency"
 
           - task: Npm@1
