@@ -26,6 +26,9 @@ stages:
             inputs:
               version: "$(dotnetSdkVersion)"
 
+          - script: "npm install --force"
+            displayName: "Install nan dependency"
+
           - task: Npm@1
             displayName: "Run npm install"
             inputs:
